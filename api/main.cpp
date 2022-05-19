@@ -5,6 +5,7 @@
 using namespace std;
 
 int main(int argc, char* args[]) {
-  cout << add_mul(20, 30) << endl;
+  int result = add_mul(40, 50);
+  cout << "add_mul(40, 50): " << result << ", valid: " << (result == 2090) << endl;
   return 0;
 }

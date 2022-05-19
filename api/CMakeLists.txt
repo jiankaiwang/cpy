@@ -10,20 +10,15 @@ else()
   if (CMAKE_C_COMPILER MATCHES "aarch64")
     set (LIB ${CMAKE_SOURCE_DIR}/libinfer.so)
   else()
+    # x86_64
     set (LIB ${CMAKE_SOURCE_DIR}/libmops.so)
     set (LIB2 ${CMAKE_SOURCE_DIR}/libinfer.so)
+    set (PINC /usr/include/python3.6)
   endif()
 endif()
 
-# add_library(
-#   infer SHARED
-#   infer.hpp 
-#   infer.cpp
-# )
-
 add_executable(main main.cpp)
-# target_link_libraries(main PUBLIC infer)
+target_include_directories(main PUBLIC ${PINC})
 target_link_libraries(main PUBLIC ${LIB2})
-# the more element one should be placed in the bottom
 target_link_libraries(main PUBLIC ${LIB})
 
