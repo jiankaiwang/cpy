@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <map>
 
 /* step.1 include the Python.h */
 #include <Python.h>
@@ -48,6 +49,30 @@ PyObject* add_and_mul(PyObject* self, PyObject* args) {
     return PyLong_FromLong(static_cast<long>(result));
 }
 
+PyObject* get_map(PyObject* self, PyObject* args) {
+    // transform C++ map to the Python dict
+    map<int, double> data;
+    for(int i = 1; i <= 10 ; i++) {
+        data[i] = i * i * 3.14;
+    }
+
+    PyObject* retdict = PyDict_New();
+    for(map<int, double>::iterator it = data.begin(); it != data.end(); it++) {
+        PyObject* new_key = PyLong_FromLong(it -> first);
+        PyObject* new_val = PyFloat_FromDouble(it -> second);
+        int state = PyDict_SetItem(retdict, new_key, new_val);
+        Py_XDECREF(new_key);
+        Py_XDECREF(new_val);
+
+        if(state) {
+            printf("cannot insert element '%i': '%f' into Python dict.", 
+            it->first, it -> second);
+        }
+    }
+
+    return retdict;
+}
+
 /* step.3 Define the structure for how to express C++ method to Python */
 static PyMethodDef apis_methods[] = {
     // The first property is the name exposed to Python, int_add_mul
@@ -57,7 +82,8 @@ static PyMethodDef apis_methods[] = {
     { "get_long", (PyCFunction)get_long, METH_O, nullptr },    
     { "get_int", (PyCFunction)get_int, METH_O, nullptr },
     { "parse_args", (PyCFunction)parse_args, METH_VARARGS, nullptr },
-    { "int_add_mul", (PyCFunction)add_and_mul, METH_VARARGS, nullptr },    
+    { "int_add_mul", (PyCFunction)add_and_mul, METH_VARARGS, nullptr },
+    { "get_map", (PyCFunction)get_map, METH_VARARGS, nullptr },    
 
     // Terminate the array with an object containing nulls.
     { nullptr, nullptr, 0, nullptr }
