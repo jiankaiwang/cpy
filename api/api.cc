@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <sstream>
+#include <vector>
 #include <map>
 
 /* step.1 include the Python.h */
@@ -14,6 +16,9 @@ http://web.mit.edu/people/amliu/vrut/python/ext/parseTuple.html
 */
 
 using namespace std;
+typedef vector<int> vec_i;
+typedef map<int, double> map_id;
+typedef map<string, map_id> map_s_id;
 
 /* step.2 define the C++ functions */
 PyObject* get_long(PyObject* self, PyObject* o) {
@@ -51,26 +56,91 @@ PyObject* add_and_mul(PyObject* self, PyObject* args) {
 
 PyObject* get_map(PyObject* self, PyObject* args) {
     // transform C++ map to the Python dict
-    map<int, double> data;
+    map_id data;
     for(int i = 1; i <= 10 ; i++) {
         data[i] = i * i * 3.14;
     }
 
-    PyObject* retdict = PyDict_New();
-    for(map<int, double>::iterator it = data.begin(); it != data.end(); it++) {
+    PyObject* ret_dict = PyDict_New();
+    for(map_id::iterator it = data.begin(); it != data.end(); it++) {
         PyObject* new_key = PyLong_FromLong(it -> first);
         PyObject* new_val = PyFloat_FromDouble(it -> second);
-        int state = PyDict_SetItem(retdict, new_key, new_val);
+        int state = PyDict_SetItem(ret_dict, new_key, new_val);
         Py_XDECREF(new_key);
         Py_XDECREF(new_val);
 
         if(state) {
-            printf("cannot insert element '%i': '%f' into Python dict.", 
+            printf("cannot insert element '%i': '%f' into Python dict.\n", 
             it->first, it -> second);
         }
     }
 
-    return retdict;
+    return ret_dict;
+}
+
+PyObject* get_list(PyObject* self, PyObject* args) {
+    // transform C++ map to the Python dict
+    vec_i data;
+    for(int i = 1; i <= 10 ; i++) {
+        data.push_back(i * i * 3.14);
+    }
+
+    Py_ssize_t len = 0;  // initial
+    PyObject* ret_list = PyList_New(len);
+    for(vec_i::iterator it = data.begin(); it != data.end(); it++) {
+        PyObject* new_val = PyFloat_FromDouble(*it);
+        int state = PyList_Append(ret_list, new_val);
+        Py_XDECREF(new_val);
+
+        if(state) {
+            printf("cannot insert element '%i': '%f' into Python list.\n", *it);
+        }
+    }
+
+    return ret_list;
+}
+
+PyObject* get_advmap(PyObject* self, PyObject* args) {
+    // transform C++ map to the Python dict
+    map_s_id data;
+    stringstream ss;    
+    for(int v = 0; v <= 20; v += 10) {
+        map_id details;
+        ss.str("");  // clear
+        ss << 's' << v;
+        for(int i = 1; i <= 10 ; i++) {
+            details[v + i] = (v + i) * (v + i) * 3.14;
+        }
+        data[ss.str()] = details;
+    }
+
+    PyObject* ret_dict = PyDict_New();
+    int state = 0;
+    for(map_s_id::iterator it = data.begin(); it != data.end(); it++) {
+        PyObject* new_key = PyUnicode_FromString((it -> first).c_str());
+        PyObject* pairdict = PyDict_New();
+        for(map_id::iterator im = (it -> second).begin(); im != (it -> second).end(); im ++) {
+            PyObject* new_p_key = PyLong_FromLong(im -> first);
+            PyObject* new_p_val = PyFloat_FromDouble(im -> second);
+            state = PyDict_SetItem(pairdict, new_p_key, new_p_val);
+            Py_XDECREF(new_p_key);
+            Py_XDECREF(new_p_val);
+
+            if(state) {
+                printf("cannot insert element '%i': '%f' into Python dict.\n", 
+                im->first, im -> second);
+            }
+        }
+        state = PyDict_SetItem(ret_dict, new_key, pairdict);
+        Py_XDECREF(new_key);
+        Py_XDECREF(pairdict);        
+
+        if(state) {
+            printf("cannot insert element '%i' into Python higher dict.\n", it->first);
+        }        
+    }
+
+    return ret_dict;
 }
 
 /* step.3 Define the structure for how to express C++ method to Python */
@@ -83,7 +153,9 @@ static PyMethodDef apis_methods[] = {
     { "get_int", (PyCFunction)get_int, METH_O, nullptr },
     { "parse_args", (PyCFunction)parse_args, METH_VARARGS, nullptr },
     { "int_add_mul", (PyCFunction)add_and_mul, METH_VARARGS, nullptr },
-    { "get_map", (PyCFunction)get_map, METH_VARARGS, nullptr },    
+    { "get_map", (PyCFunction)get_map, METH_VARARGS, nullptr },   
+    { "get_advmap", (PyCFunction)get_advmap, METH_VARARGS, nullptr },    
+    { "get_list", (PyCFunction)get_list, METH_VARARGS, nullptr }, 
 
     // Terminate the array with an object containing nulls.
     { nullptr, nullptr, 0, nullptr }
