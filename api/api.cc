@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <fstream>
 #include <map>
 
 /* step.1 include the Python.h */
@@ -52,6 +53,37 @@ PyObject* add_and_mul(PyObject* self, PyObject* args) {
 
     int result = add_mul(v1, v2);
     return PyLong_FromLong(static_cast<long>(result));
+}
+
+PyObject* get_str(PyObject* self, PyObject* args) {
+    char* s[150];
+
+    if (! PyArg_ParseTuple(args, "y", &s)) {
+        cout << "Error!" << endl;
+        return NULL;
+    }    
+    cout << "Byte length: " << strlen(*s) << endl;
+
+    return PyUnicode_FromString(*s);
+}
+
+PyObject* check_utf8_filepath(PyObject* self, PyObject* args) {
+    char* s[150];
+
+    if (! PyArg_ParseTuple(args, "y", &s)) {
+        cout << "Error!" << endl;
+        return NULL;
+    }    
+
+    ifstream fin;
+    fin.open(*s, ios::binary);
+    if(fin) {
+        cout << "UTF-8: " << *s << endl;
+        fin.close();
+        return PyLong_FromLong(static_cast<long>(0));
+    } else {
+        return PyLong_FromLong(static_cast<long>(1));
+    }
 }
 
 PyObject* get_map(PyObject* self, PyObject* args) {
@@ -156,6 +188,8 @@ static PyMethodDef apis_methods[] = {
     { "get_map", (PyCFunction)get_map, METH_VARARGS, nullptr },   
     { "get_advmap", (PyCFunction)get_advmap, METH_VARARGS, nullptr },    
     { "get_list", (PyCFunction)get_list, METH_VARARGS, nullptr }, 
+    { "get_str", (PyCFunction)get_str, METH_VARARGS, nullptr }, 
+    { "check_utf8_filepath", (PyCFunction)check_utf8_filepath, METH_VARARGS, nullptr }, 
 
     // Terminate the array with an object containing nulls.
     { nullptr, nullptr, 0, nullptr }
